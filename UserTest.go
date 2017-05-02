@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
@@ -26,14 +28,14 @@ import (
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
 }
-var userIndexStr = "_userindex"	
-type User struct{
-	Name string `json:"name"`					//the fieldtags are needed to keep case from bouncing around
-	id int `json:"id"`
-	phone int `json:"phone"`
-	
-}
 
+var userIndexStr = "_userindex"
+
+type User struct {
+	Name  string `json:"name"` //the fieldtags are needed to keep case from bouncing around
+	id    int    `json:"id"`
+	phone int    `json:"phone"`
+}
 
 func main() {
 	err := shim.Start(new(SimpleChaincode))
@@ -58,14 +60,14 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	}
 
 	// Write the state to the ledger
-	err = stub.PutState("abc", []byte(strconv.Itoa(Aval)))				//making a test var "abc", I find it handy to read/write to it right away to test the network
+	err = stub.PutState("abc", []byte(strconv.Itoa(Aval))) //making a test var "abc", I find it handy to read/write to it right away to test the network
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var empty []string
-	jsonAsBytes, _ := json.Marshal(empty)								//marshal an emtpy array of strings to clear the index
-	err = stub.PutState(marbleIndexStr, jsonAsBytes)
+	jsonAsBytes, _ := json.Marshal(empty) //marshal an emtpy array of strings to clear the index
+	err = stub.PutState(userIndexStr, jsonAsBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +84,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.Init(stub, "init", args)
 	} else if function == "write" {
 		return t.write(stub, args)
-	}else if function == "userLogin" {
+	} else if function == "userLogin" {
 		return t.write(stub, args)
 	}
 	fmt.Println("invoke did not find func: " + function)
@@ -160,12 +162,18 @@ func (t *SimpleChaincode) userLogin(stub shim.ChaincodeStubInterface, args []str
 	if len(args[2]) <= 0 {
 		return nil, errors.New("3rd argument must be a non-empty string")
 	}
-	
+
 	name := args[0]
-	id := strings.Atoi(args[1])
-	phone := strings.Atoi(args[3])
+	id, err := strconv.Atoi(args[1])
+	if err != nil {
+		return nil, errors.New("Failed to get marble name")
+	}
+	phone, err := strconv.Atoi(args[2])
+	if err != nil {
+		return nil, errors.New("Failed to get marble name")
+	}
 	//size, err := strconv.Atoi(args[2])
-	
+
 	//check if user already exists
 	userAsBytes, err := stub.GetState(name)
 	if err != nil {
@@ -173,32 +181,32 @@ func (t *SimpleChaincode) userLogin(stub shim.ChaincodeStubInterface, args []str
 	}
 	res := User{}
 	json.Unmarshal(userAsBytes, &res)
-	if res.Name == name{
+	if res.Name == name {
 		fmt.Println("This user arleady exists: " + name)
-		fmt.Println(res);
-		return nil, errors.New("This user arleady exists")				//all stop a marble by this name exists
+		fmt.Println(res)
+		return nil, errors.New("This user arleady exists") //all stop a marble by this name exists
 	}
-	
+
 	//build the marble json string manually
 	str := `{"name": "` + name + `", "id": "` + strconv.Itoa(id) + `", "phone": ` + strconv.Itoa(phone) + `"}`
-	err = stub.PutState(name, []byte(str))									//store marble with id as key
+	err = stub.PutState(name, []byte(str)) //store marble with id as key
 	if err != nil {
 		return nil, err
 	}
-		
+
 	//get the marble index
-	userAsBytes, err := stub.GetState(userIndexStr)
-	if err != nil {
+	userAsBytes, err1 := stub.GetState(userIndexStr)
+	if err1 != nil {
 		return nil, errors.New("Failed to get marble index")
 	}
-	var marbleIndex []string
-	json.Unmarshal(userAsBytes, &userIndex)							//un stringify it aka JSON.parse()
-	
+	var userIndex []string
+	json.Unmarshal(userAsBytes, &userIndex) //un stringify it aka JSON.parse()
+
 	//append
-	userIndex = append(userIndex, name)									//add marble name to index list
+	userIndex = append(userIndex, name) //add marble name to index list
 	fmt.Println("! marble index: ", userIndex)
 	jsonAsBytes, _ := json.Marshal(userIndex)
-	err = stub.PutState(userIndexStr, jsonAsBytes)						//store name of marble
+	err = stub.PutState(userIndexStr, jsonAsBytes) //store name of marble
 
 	fmt.Println("- end init marble")
 	return nil, nil
