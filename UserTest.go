@@ -72,6 +72,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	} else if function == "user_login" {
 		return t.init_login(stub, args)
 
+	} else if function == "Delete" {
+		return t.Delete(stub, args)
+
 	}
 
 	fmt.Println("invoke did not find func: " + function)
@@ -114,21 +117,21 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 // read - query function to read key/value pair
 
 func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var key, jsonResp string
+	var name, jsonResp string
 	var err error
 
 	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the key to query")
+		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
 	}
 
-	key = args[0]
-	valAsbytes, err := stub.GetState(key)
+	name = args[0]
+	valAsbytes, err := stub.GetState(name) //get the var from chaincode state
 	if err != nil {
-		jsonResp = "{\"Error\":\"Failed to get state for " + key + "\"}"
+		jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
 		return nil, errors.New(jsonResp)
 	}
 
-	return valAsbytes, nil
+	return valAsbytes, nil //send it onward
 }
 
 func (t *SimpleChaincode) init_login(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
@@ -200,5 +203,40 @@ func (t *SimpleChaincode) init_login(stub shim.ChaincodeStubInterface, args []st
 	err = stub.PutState(userIndexStr, jsonAsBytes) //store name of marble
 
 	fmt.Println("- end init login")
+	return nil, nil
+}
+func (t *SimpleChaincode) Delete(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+	}
+
+	name := args[0]
+	err := stub.DelState(name) //remove the key from chaincode state
+	if err != nil {
+		return nil, errors.New("Failed to delete state")
+	}
+
+	//get the marble index
+	userAsBytes, err := stub.GetState(userIndexStr)
+	if err != nil {
+		return nil, errors.New("Failed to get user index")
+	}
+	var userIndex []string
+	json.Unmarshal(userAsBytes, &userIndex) //un stringify it aka JSON.parse()
+
+	//remove user from index
+	for i, val := range userIndex {
+		fmt.Println(strconv.Itoa(i) + " - looking at " + val + " for " + name)
+		if val == name { //find the correct marble
+			fmt.Println("found user")
+			userIndex = append(userIndex[:i], userIndex[i+1:]...) //remove it
+			for x := range userIndex {                            //debug prints...
+				fmt.Println(string(x) + " - " + userIndex[x])
+			}
+			break
+		}
+	}
+	jsonAsBytes, _ := json.Marshal(userIndex) //save new index
+	err = stub.PutState(userIndexStr, jsonAsBytes)
 	return nil, nil
 }
