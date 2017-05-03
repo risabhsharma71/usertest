@@ -45,16 +45,39 @@ func main() {
 	}
 }
 
-// Init resets all the things
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	var Aval int
+	var err error
+
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
 
-	err := stub.PutState("helloworld", []byte(args[0]))
+	// Initialize the chaincode
+	Aval, err = strconv.Atoi(args[0])
+	if err != nil {
+		return nil, errors.New("Expecting integer value for asset holding")
+	}
+
+	// Write the state to the ledger
+	err = stub.PutState("abc", []byte(strconv.Itoa(Aval))) //making a test var "abc", I find it handy to read/write to it right away to test the network
 	if err != nil {
 		return nil, err
 	}
+
+	var empty []string
+	jsonAsBytes, _ := json.Marshal(empty) //marshal an emtpy array of strings to clear the index
+	err = stub.PutState(userIndexStr, jsonAsBytes)
+	if err != nil {
+		return nil, err
+	}
+	/*
+		var trades AllTrades
+		jsonAsBytes, _ = json.Marshal(trades)								//clear the open trade struct
+		err = stub.PutState(openTradesStr, jsonAsBytes)
+		if err != nil {
+			return nil, err
+		}*/
 
 	return nil, nil
 }
