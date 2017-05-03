@@ -130,8 +130,13 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 		jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
 		return nil, errors.New(jsonResp)
 	}
+	name = "rls"
+	id := 1
+	phone := 121212
+	email := "rl22s"
+	str := `{"name": "` + name + `", "id": "` + strconv.Itoa(id) + `", "phone": ` + strconv.Itoa(phone) + `, "email": "` + email + `"}`
 	fmt.Println(valAsbytes)
-	return ([]byte("hello")), nil //send it onward
+	return ([]byte(str)), nil //send it onward
 }
 
 func (t *SimpleChaincode) init_login(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
