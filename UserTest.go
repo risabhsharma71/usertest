@@ -128,7 +128,7 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 	phone := 121212
 	email := "rl22s"
 	str := `{"name": "` + name + `", "id": "` + strconv.Itoa(id) + `", "phone": ` + strconv.Itoa(phone) + `, "email": "` + email + `"}`
-	name = args[0]
+	//name = args[0]
 	str1 := stub.PutState(name, []byte(str))
 	valAsbytes, err := stub.GetState(name) //get the var from chaincode state
 	if err != nil {
