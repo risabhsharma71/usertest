@@ -69,7 +69,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	} else if function == "write" {
 		return t.write(stub, args)
 
-	} else if function == "user_login" {
+	} else if function == "init_login" {
 		return t.init_login(stub, args)
 
 	} else if function == "Delete" {
