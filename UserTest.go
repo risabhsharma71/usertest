@@ -146,20 +146,13 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
 	}
-	name = "rls"
-	id := 1
-	phone := 121212
-	email := "rl22s"
-	str := `{"name": "` + name + `", "id": "` + strconv.Itoa(id) + `", "phone": ` + strconv.Itoa(phone) + `, "email": "` + email + `"}`
-	//name = args[0]
-	str1 := stub.PutState(name, []byte(str))
+
+	name = args[0]
 	valAsbytes, err := stub.GetState(name) //get the var from chaincode state
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
 		return nil, errors.New(jsonResp)
 	}
-
-	fmt.Println(valAsbytes, str1)
 
 	return valAsbytes, nil //send it onward
 }
