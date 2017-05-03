@@ -178,6 +178,7 @@ func (t *SimpleChaincode) init_login(stub shim.ChaincodeStubInterface, args []st
 	if res.Name == name {
 		fmt.Println("This name arleady exists: " + name)
 		fmt.Println(res)
+		fmt.Println(userAsBytes)
 		return nil, errors.New("This user arleady exists") //all stop a marble by this name exists
 	}
 
@@ -185,6 +186,8 @@ func (t *SimpleChaincode) init_login(stub shim.ChaincodeStubInterface, args []st
 	str := `{"name": "` + name + `", "id": "` + strconv.Itoa(id) + `", "phone": ` + strconv.Itoa(phone) + `, "email": "` + email + `"}`
 	err = stub.PutState(name, []byte(str)) //store marble with id as key
 	fmt.Println(name)
+	fmt.Println([]byte(str))
+	fmt.Println(err)
 	if err != nil {
 		return nil, err
 	}
